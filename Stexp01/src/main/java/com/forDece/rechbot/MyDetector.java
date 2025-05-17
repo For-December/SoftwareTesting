@@ -31,45 +31,45 @@ public class MyDetector extends BaseDetector {
 		Stack<Integer> blockDepths = new Stack<>();
 		int currentDepth = 0;
 
-		for (int i = 0; i < lines.length; i++) {
-			String line = lines[i].trim();
+        for (String s : lines) {
+            String line = s.trim();
 
-			// 追踪代码块深度
-			if (line.contains("{")) {
-				currentDepth++;
-			} else if (line.contains("}")) {
-				currentDepth--;
-				// 当退出一个代码块时，检查是否需要弹出条件
-				while (!blockDepths.isEmpty() && blockDepths.peek() > currentDepth) {
-					blockDepths.pop();
-					if (!conditions.isEmpty()) {
-						conditions.pop();
-					}
-				}
-			}
+            // 追踪代码块深度
+            if (line.contains("{")) {
+                currentDepth++;
+            } else if (line.contains("}")) {
+                currentDepth--;
+                // 当退出一个代码块时，检查是否需要弹出条件
+                while (!blockDepths.isEmpty() && blockDepths.peek() > currentDepth) {
+                    blockDepths.pop();
+                    if (!conditions.isEmpty()) {
+                        conditions.pop();
+                    }
+                }
+            }
 
-			if (line.startsWith("if")) {
-				String ifCondition = extractCondition(line);
-				if (!ifCondition.isEmpty()) {
-					conditions.push("(" + ifCondition + ")");
-					blockDepths.push(currentDepth);
-				}
-			} else if (line.startsWith("else")) {
-				if (!conditions.isEmpty() && !blockDepths.isEmpty() && blockDepths.peek() == currentDepth) {
-					String lastCondition = conditions.pop();
-					// 移除最外层括号再取反
-					if (lastCondition.startsWith("(") && lastCondition.endsWith(")")) {
-						lastCondition = lastCondition.substring(1, lastCondition.length() - 1);
-					}
-					conditions.push("!(" + lastCondition + ")");
-				}
-			}
+            if (line.startsWith("if")) {
+                String ifCondition = extractCondition(line);
+                if (!ifCondition.isEmpty()) {
+                    conditions.push("(" + ifCondition + ")");
+                    blockDepths.push(currentDepth);
+                }
+            } else if (line.startsWith("else")) {
+                if (!conditions.isEmpty() && !blockDepths.isEmpty() && blockDepths.peek() == currentDepth) {
+                    String lastCondition = conditions.pop();
+                    // 移除最外层括号再取反
+                    if (lastCondition.startsWith("(") && lastCondition.endsWith(")")) {
+                        lastCondition = lastCondition.substring(1, lastCondition.length() - 1);
+                    }
+                    conditions.push("!(" + lastCondition + ")");
+                }
+            }
 
-			// 当遇到目标行时，停止收集条件
-			if (line.contains(targetLine)) {
-				break;
-			}
-		}
+            // 当遇到目标行时，停止收集条件
+            if (line.contains(targetLine)) {
+                break;
+            }
+        }
 
 		// 构建最终条件表达式
 		boolean first = true;
