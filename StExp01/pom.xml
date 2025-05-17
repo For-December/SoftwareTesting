@@ -5,13 +5,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.forDece</groupId>
-    <artifactId>Stexp01</artifactId>
+    <artifactId>StExp01</artifactId>
     <version>1.0-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.openjdk.nashorn</groupId>
             <artifactId>nashorn-core</artifactId>
             <version>15.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>reachbot</groupId>
+            <artifactId>sdk.core</artifactId>
+            <version>0.0.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/reachbot-base.jar</systemPath>
         </dependency>
     </dependencies>
 

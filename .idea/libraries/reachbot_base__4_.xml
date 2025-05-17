@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="reachbot-base (4)">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/StExp01/lib/reachbot-base.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
