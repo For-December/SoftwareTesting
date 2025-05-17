@@ -6,9 +6,27 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.util.Stack;
+import java.util.StringJoiner;
+
+/**
+ * 自己的代码路径条件检测器，重写了老师提供的 BaseDetector<br/>
+ * 用于分析指定代码中的执行路径条件并判断目标输出语句的可达性。
+ * <p>
+ * 通过解析方法代码中的控制流语句（如if/else），构建路径条件表达式，并使用脚本引擎进行可达性判断。
+ * </p>
+ */
 public class MyDetector extends BaseDetector {
 
 
+	/**
+	 * 获取指定方法中目标输出语句的路径条件表达式
+	 *
+	 * @param pathFile   源代码文件路径
+	 * @param methodName 需要分析的方法名称
+	 * @param id         目标输出语句的唯一标识符（println内容）
+	 * @return 组合后的逻辑条件表达式字符串，格式为"condition1 && condition2..."，
+	 *         如果找不到目标输出语句或没有条件则返回空字符串
+	 */
 	@Override
 	public String getCondition(String pathFile, String methodName, String id) {
 		// 获取方法并移除注释
@@ -26,7 +44,6 @@ public class MyDetector extends BaseDetector {
 			return "";
 		}
 
-		StringBuilder condition = new StringBuilder();
 		String[] lines = methodCode.split("\n");
 		// 存储条件和代码块深度
 		Stack<String> conditions = new Stack<>();
@@ -36,13 +53,17 @@ public class MyDetector extends BaseDetector {
 		// 遍历代码，提取路径条件
         for (String s : lines) {
             String line = s.trim();
+			// 当遇到目标行时，停止收集条件
+			if (line.contains(targetLine)) {
+				break;
+			}
 
             // 追踪代码块深度
             if (line.contains("{")) {
                 currentDepth++;
             } else if (line.contains("}")) {
                 currentDepth--;
-                // 当退出一个代码块时，检查是否需要弹出条件
+                // 当退出一个代码块时，检查是否需要弹出条件语句
                 while (!blockDepths.isEmpty() && blockDepths.peek() > currentDepth) {
                     blockDepths.pop();
                     if (!conditions.isEmpty()) {
@@ -67,25 +88,21 @@ public class MyDetector extends BaseDetector {
                     conditions.push("!(" + lastCondition + ")");
                 }
             }
-
-            // 当遇到目标行时，停止收集条件
-            if (line.contains(targetLine)) {
-                break;
-            }
         }
 
 		// 构建最终条件表达式
-		boolean first = true;
-		for (String cond : conditions) {
-			if (!first) {
-				condition.append(" && ");
-			}
-			condition.append(cond);
-			first = false;
-		}
-
-		return condition.toString();
+		return String.join(" && ", conditions);
 	}
+
+	/**
+	 * 判断目标输出语句是否可达
+	 *
+	 * @param pathFile   源代码文件路径
+	 * @param methodName 需要分析的方法名称
+	 * @param id         目标输出语句的唯一标识符
+	 * @return true 表示该输出语句可达，false 表示不可达或发生错误
+	 * @throws SecurityException 如果脚本引擎执行权限受限时可能抛出异常
+	 */
 	@Override
 	public boolean getReachability(String pathFile, String methodName, String id) {
 		String condition = getCondition(pathFile, methodName, id);
@@ -107,6 +124,13 @@ public class MyDetector extends BaseDetector {
 		}
 	}
 
+	/**
+	 * 从if语句中提取条件表达式
+	 *
+	 * @param line 包含if语句的代码行（需已去除注释和前后空格）
+	 * @return 提取的条件表达式（不含外层括号），如果格式无效则返回空字符串
+	 * @see #removeComments(String) 建议先使用该方法清理代码
+	 */
 	private String extractCondition(String line) {
 		// 处理单行if语句
 		int startIdx = line.indexOf('(');
@@ -140,6 +164,13 @@ public class MyDetector extends BaseDetector {
 		return "";
 	}
 
+
+	/**
+	 * 清理代码中的注释内容
+	 *
+	 * @param code 原始代码字符串
+	 * @return 去除所有单行注释（//）和多行注释（/* ... *\/）后的代码
+	 */
 	private String removeComments(String code) {
 		// 移除单行注释
 		code = code.replaceAll("//.*$", "");
@@ -147,12 +178,25 @@ public class MyDetector extends BaseDetector {
 		code = code.replaceAll("/\\*.*?\\*/", "");
 		return code;
 	}
-
+	/**
+	 * 预处理条件表达式使其符合JavaScript语法要求
+	 *
+	 * @param condition 原始条件表达式
+	 * @return 处理后的表达式，包括：
+	 *         - 替换中文括号为英文括号
+	 *         - 规范逻辑运算符格式（添加空格分隔）
+	 *         - 压缩多余空格
+	 */
 	private String preprocessCondition(String condition) {
 		// 替换中文括号为英文括号
-		condition = condition.replace('（', '(').replace('）', ')');
+		condition = condition
+				.replace('（', '(')
+				.replace('）', ')');
 		// 替换中文逻辑运算符
-		condition = condition.replace("&&", " && ").replace("||", " || ").replace("!", "! ");
+		condition = condition
+				.replace("&&", " && ")
+				.replace("||", " || ")
+				.replace("!", "! ");
 		// 处理缺失的空格
 		condition = condition.replace("  ", " ");
 		return condition;
