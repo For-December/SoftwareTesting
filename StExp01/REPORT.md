@@ -16,50 +16,55 @@
 
 所有的实现逻辑都在 `com.forDece.rechbot.MyDetector.java` 中
 
-### 2. 条件表达式提取（getCondition）
-#### 解决方案
+所有方法都写了 javadoc，关键逻辑写了注释
+
+### 2. 条件表达式提取（getCondition）实现原理
 1. **代码块深度追踪**：
     - 使用`currentDepth`记录当前嵌套层级。
     - 使用`blockDepths`栈记录每个条件对应的代码块深度，退出代码块时弹出对应条件。
 
-2. **条件提取算法**：
-   ```java
-   if (line.startsWith("if")) {
-       String ifCondition = extractCondition(line);
-       conditions.push("(" + ifCondition + ")");
-       blockDepths.push(currentDepth);
-   } else if (line.startsWith("else")) {
-       // 对上一个条件取反
-       String lastCondition = conditions.pop();
-       conditions.push("!(" + lastCondition + ")");
-   }
+2. **条件提取核心逻辑伪代码**：
+   ```
+    1. 初始化:
+        - 条件栈 = [] // 存储路径上的条件表达式
+        - 深度栈 = [] // 存储每个条件对应的代码块深度
+        - 当前深度 = 0 // 初始为最外层代码块
+    
+    2. 遍历代码行:
+        对方法代码的每一行:
+            a. 预处理:
+                - 去除行首尾空格
+                - 跳过空行和无关行
+                
+            b. 检查终止条件:
+                如果当前行是目标输出语句:
+                    退出循环
+                
+            c. 更新代码块深度:
+                如果行包含左大括号: 深度+1
+                如果行包含右大括号: 深度-1，并弹出深度栈中>当前深度的元素
+                
+            d. 处理条件语句:
+                如果行是if语句:
+                    提取括号内的条件表达式
+                    添加括号并压入条件栈
+                    压入当前深度到深度栈
+                
+                如果行是else语句:
+                    弹出条件栈顶元素
+                    对条件取反
+                    压入取反后的条件到条件栈
+    
+    3. 构建结果:
+        返回条件栈中所有元素用"&&"连接的字符串
    ```
 
-3. **括号匹配处理**：
-   ```java
-   private String extractCondition(String line) {
-       int start = line.indexOf('(');
-       int end = findMatchingClosingBracket(line, start);
-       return line.substring(start + 1, end).trim();
-   }
-   ```
+### 3. 判断路径是否可达（getReachability）实现原理
 
-### 3. 可达性评估
-
-#### 解决方案
-1. **JavaScript引擎求值**：
-   ```java
-   ScriptEngineManager manager = new ScriptEngineManager();
-   ScriptEngine engine = manager.getEngineByName("JavaScript");
-   return Boolean.parseBoolean(engine.eval(condition).toString());
-   ```
-
-2. **异常处理**：
-    - 捕获`ScriptException`，确保工具在缺少引擎时仍能运行。
-    - 添加表达式预处理，处理中文符号和格式问题。
+- 使用脚本引擎动态执行表达式并获取结果
 
 
-## 三、实现难点与解决方案
+## 三、遇到的问题与解决方案
 
 ### 1. 条件表达式括号问题
 - **问题**：生成的条件表达式括号不匹配，导致逻辑错误。
@@ -79,41 +84,6 @@
 
 
 ## 四、测试与验证
-### 1. 测试用例覆盖
-- **单一条件**：`if (a > 10)`
-- **复合条件**：`if (a > 10 || b < 20)`
-- **嵌套条件**：
-  ```java
-  if (...) {
-      if (...) { ... }
-  } else { ... }
-  ```
-- **跨多行条件**：
-  ```java
-  if (a > 10 && 
-      b < 20) { ... }
-  ```
 
-### 2. 验证结果
 通过JUnit测试用例验证，所有测试均通过：
 > ![img_3.png](assets/img_3.png)
-
-## 五、核心代码分析
-### 1. `getCondition`方法
-- **功能**：提取到达目标输出语句的条件表达式。
-- **关键逻辑**：
-    - 追踪代码块深度，确保条件作用域正确。
-    - 使用栈结构管理嵌套条件，遇到`else`时取反。
-    - 遇到目标行时立即停止收集，避免混入无关条件。
-
-### 2. `getReachability`方法
-- **功能**：评估条件表达式的可达性。
-- **关键逻辑**：
-    - 使用JavaScript引擎动态计算表达式值。
-    - 预处理表达式，处理格式问题和异常情况。
-
-### 3. `extractCondition`方法
-- **功能**：从`if`语句中提取完整的条件表达式。
-- **关键逻辑**：
-    - 通过括号匹配算法，确保提取的条件表达式括号完整。
-    - 处理嵌套括号和多行条件。

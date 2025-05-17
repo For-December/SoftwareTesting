@@ -6,7 +6,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.util.Stack;
-import java.util.StringJoiner;
 
 /**
  * 自己的代码路径条件检测器，重写了老师提供的 BaseDetector<br/>
@@ -53,6 +52,11 @@ public class MyDetector extends BaseDetector {
 		// 遍历代码，提取路径条件
         for (String s : lines) {
             String line = s.trim();
+
+			// 跳过空行
+			if (line.isEmpty()){
+				continue;
+			}
 			// 当遇到目标行时，停止收集条件
 			if (line.contains(targetLine)) {
 				break;
