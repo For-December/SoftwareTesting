@@ -11,13 +11,14 @@ public class MyDetector extends BaseDetector {
 
 	@Override
 	public String getCondition(String pathFile, String methodName, String id) {
+		// 获取方法并移除注释
 		String methodCode = getMethodCode(pathFile, methodName);
 		if (methodCode == null) {
 			return "";
 		}
-
 		methodCode = removeComments(methodCode);
 
+		// 定位输出语句
 		String targetLine = "System.out.println(\"" + id + "\");";
 		int targetIndex = methodCode.indexOf(targetLine);
 
@@ -27,10 +28,12 @@ public class MyDetector extends BaseDetector {
 
 		StringBuilder condition = new StringBuilder();
 		String[] lines = methodCode.split("\n");
+		// 存储条件和代码块深度
 		Stack<String> conditions = new Stack<>();
 		Stack<Integer> blockDepths = new Stack<>();
 		int currentDepth = 0;
 
+		// 遍历代码，提取路径条件
         for (String s : lines) {
             String line = s.trim();
 

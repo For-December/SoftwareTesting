@@ -12,9 +12,11 @@
 ### 1. 整体架构
 基于`BaseDetector`类扩展`MyDetector`，重写两个核心方法：
 - `getCondition(String pathFile, String methodName, String id)`：提取到达指定`System.out.println(id)`的条件表达式。
-- `getReachability(String pathFile, String methodName, String id)`：评估条件表达式的可达性。
+- `getReachability(String pathFile, String methodName, String id)`：评估条件表达式的可达性，返回`true` or `false`
 
-### 2. 条件表达式提取
+所有的实现逻辑都在 `com.forDece.rechbot.MyDetector.java` 中
+
+### 2. 条件表达式提取（getCondition）
 #### 解决方案
 1. **代码块深度追踪**：
     - 使用`currentDepth`记录当前嵌套层级。
