@@ -16,5 +16,12 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/extractbot-base.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>cfgparser</groupId>
+            <artifactId>sdk.core</artifactId>
+            <version>0.0.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/cfgparser.jar</systemPath>
+        </dependency>
     </dependencies>
 </project>

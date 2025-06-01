@@ -14,7 +14,7 @@ public class ExampleTests {
 	/** TODO
 	 *	Jifeng: Change the path of "pathFile" to your local path.
 	 */
-	private String pathFile = "src/main/java/com/forDece/rechbot/Example.java";
+	private String pathFile = "src/main/java/com/forDece/extractbot/Example.java";
 	////////////
 	
 	private String methodName1 = "example1";
