@@ -29,14 +29,13 @@ public class MyExtractor extends BaseExtractor {
 
     @Override
     public int[][] getTestPathsInArray(String pathFile, String methodName) {
-        /** TODO
-         * 	Jifeng: Write down your source code here.
-         */
+        int[][] cfg = getControlFlowGraphInArray(pathFile, methodName);
+        int[][] testRequirements = PrimePathGenerator.buildTestRequirements(cfg);
 
-        return
-new PathGenerator(getControlFlowGraphInArray(pathFile, methodName),
-        getTestRequirementsInArray(pathFile,methodName)).generateTestPaths().stream()
-        .map(path -> path.stream().mapToInt(Integer::intValue).toArray())
-        .toArray(int[][]::new);
+        return new PathGenerator(cfg, testRequirements)
+                .generateTestPaths(0, 2)
+                .stream()
+                .map(path -> path.stream().mapToInt(Integer::intValue).toArray())
+                .toArray(int[][]::new);
     }
 }
