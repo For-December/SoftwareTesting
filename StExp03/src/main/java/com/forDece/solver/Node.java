@@ -1,10 +1,11 @@
 package com.forDece.solver;
 
-
 import lombok.Builder;
+import lombok.Getter;
 
 // Node类定义（简化版，仅包含必要字段）
 @Builder
+@Getter
 public class Node implements Comparable<Node> {
     int nodeId;       // 结点编号
     int parentId;     // 父结点编号

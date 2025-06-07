@@ -4,14 +4,21 @@ import cn.edu.whu.cstar.testingcourse.cfgparser.ControlFlowNodeParser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CFGGenerator {
+    private static boolean called = false;
+
     public static List<Node> getNodes(String pathFile, String methodName) {
+        if (called) {
+            // ControlFlowNodeParser内的CfgNodeVisitor维护了一个静态计数器
+            // 重复调用会导致nodeId一直递增
+            System.out.println("请勿重复调用getNodes方法");
+            System.exit(-1);
+        }
+        called = true;
+
         ByteArrayOutputStream boStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
         try {
@@ -34,10 +41,13 @@ public class CFGGenerator {
             System.out.println("未成功解析文件，请确认您的工作目录为 StExp03 或 文件相对路径是否设置正确");
             System.exit(-1);
         }
+        if (cfgNodes.getFirst().contains("Error")) {
+            System.out.println("未成功解析文件，请确认您的工作目录为 StExp03 或 文件相对路径是否设置正确");
+            System.exit(-1);
+        }
         return cfgNodes.stream()
                 .skip(1)
                 .map(Node::BuildNode).collect(Collectors.toList());
-
     }
 
     public static int[][] buildControlFlowGraph(List<Node> nodes) {
@@ -48,7 +58,6 @@ public class CFGGenerator {
         for (Node node : nodes) {
             int currentId = node.nodeId;
             int parentId = node.parentId;
-            String content = node.content;
             int currentLineNo = node.lineNo;
 
             switch (node.statement) {
@@ -85,7 +94,6 @@ public class CFGGenerator {
                 default:
                     // 跳过非for循环相关的结点
             }
-
         }
 
         // 去重（可选，根据文档是否允许重复边）
