@@ -52,6 +52,12 @@ public class ExampleTests {
 	public void testControlFlowGraph()
 	{
 		int[][] source = myExtractor.getControlFlowGraphInArray(pathFile, methodName1);
+		for (int[] t:source){
+			for (int e:t){
+				System.out.print(e+" ");
+			}
+			System.out.println();
+		}
 		assertTrue(TestUtils.checkControlFlowGraph(source, matrixCfg));
 	}
 	

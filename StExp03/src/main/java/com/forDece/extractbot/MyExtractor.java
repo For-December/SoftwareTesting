@@ -10,7 +10,6 @@ import java.util.*;
 public class MyExtractor extends BaseExtractor{
 
 
-
 	// 存储结点ID到行号的映射
 	private Map<Integer, Integer> nodeIdToLineNumber = new HashMap<>();
 	// 存储行号到结点ID的映射
@@ -68,33 +67,35 @@ public class MyExtractor extends BaseExtractor{
 	 * 解析控制流图结点信息，构建邻接表
 	 */
 	private Map<Integer, List<Integer>> parseCFGNodes(List<String> cfgNodes) {
-		Map<Integer, List<Integer>> adjacencyList = new HashMap<>();
-		Map<Integer, Integer> nodeIdToParent = new HashMap<>();
+		// 收集所有结点ID
+		Set<Integer> allNodeIds = new HashSet<>();
+		// 存储结点ID到类型的映射
 		Map<Integer, String> nodeIdToType = new HashMap<>();
+		// 存储结点ID到高度的映射
 		Map<Integer, Integer> nodeIdToHeight = new HashMap<>();
 
-		// 解析每行结点信息
+		// 第一步：解析所有结点信息，收集结点ID
 		for (String line : cfgNodes) {
-			if (line.startsWith("method") || line.trim().isEmpty()) continue; // 跳过标题行和空行
+			if (line.startsWith("method") || line.trim().isEmpty()) continue;
 
 			String[] parts = line.trim().split("\t");
-			if (parts.length < 10) continue; // 跳过不完整的行
+			if (parts.length < 9) continue;
 
 			try {
 				int nodeId = Integer.parseInt(parts[1]);
-				int parentId = Integer.parseInt(parts[2]);
-				int height = Integer.parseInt(parts[3]);
-				String content = parts[9];
+				String content = parts[8];
 
-				// 提取结点类型（content中@前的部分）
+				// 提取结点类型
 				String nodeType = content.contains("@") ?
 						content.substring(0, content.indexOf('@')) : content;
 
+				// 提取高度
+				int height = Integer.parseInt(parts[3]);
+
 				// 存储结点信息
-				nodeIdToParent.put(nodeId, parentId);
+				allNodeIds.add(nodeId);
 				nodeIdToType.put(nodeId, nodeType);
 				nodeIdToHeight.put(nodeId, height);
-				adjacencyList.putIfAbsent(nodeId, new ArrayList<>());
 
 				// 解析行号信息
 				int startLine = Integer.parseInt(parts[5]);
@@ -102,7 +103,7 @@ public class MyExtractor extends BaseExtractor{
 				lineNumberToNodeId.put(startLine, nodeId);
 
 				// 特殊处理：记录方法起始和结束行
-				if (nodeType.contains("method-start")) {
+				if (nodeType.contains("first-statement")) {
 					methodStartLine = startLine;
 				} else if (nodeType.contains("pseudo-return")) {
 					methodEndLine = startLine;
@@ -113,48 +114,55 @@ public class MyExtractor extends BaseExtractor{
 			}
 		}
 
-		// 构建边关系
-		for (int nodeId : adjacencyList.keySet()) {
+		// 第二步：初始化邻接表，确保所有结点ID存在
+		Map<Integer, List<Integer>> adjacencyList = new HashMap<>();
+		for (int nodeId : allNodeIds) {
+			adjacencyList.put(nodeId, new ArrayList<>());
+		}
+
+		// 第三步：构建边关系（不修改Map结构，只修改List值）
+		for (int nodeId : allNodeIds) {
 			String nodeType = nodeIdToType.get(nodeId);
-			int parentId = nodeIdToParent.get(nodeId);
 			int height = nodeIdToHeight.get(nodeId);
 
 			// 处理for循环
 			if (nodeType.startsWith("for")) {
-				int conditionNodeId = nodeId + 1; // for-condition
-				int bodyNodeId = nodeId + 2;      // for-body
-				int updateNodeId = nodeId + 3;    // for-update
+				int conditionNodeId = nodeId + 1;
+				int bodyNodeId = nodeId + 2;
+				int updateNodeId = nodeId + 3;
 
-				// for语句 → for-condition
-				adjacencyList.get(nodeId).add(conditionNodeId);
+				// 确保目标结点存在（已在第一步初始化）
+				if (allNodeIds.contains(conditionNodeId)) {
+					adjacencyList.get(nodeId).add(conditionNodeId);
+				}
 
-				// for-condition → for-body (true分支)
-				adjacencyList.get(conditionNodeId).add(bodyNodeId);
+				if (allNodeIds.contains(bodyNodeId)) {
+					adjacencyList.get(conditionNodeId).add(bodyNodeId);
+				}
 
 				// for-condition → 后续语句 (false分支)
-				int nextNodeId = findNextNodeAtSameLevel(nodeId, adjacencyList, nodeIdToHeight);
+				int nextNodeId = findNextNodeAtSameLevel(nodeId, allNodeIds, nodeIdToHeight);
 				if (nextNodeId != -1) {
 					adjacencyList.get(conditionNodeId).add(nextNodeId);
 				}
 
-				// for-body → for-update
-				adjacencyList.get(bodyNodeId).add(updateNodeId);
-
-				// for-update → for-condition
-				adjacencyList.get(updateNodeId).add(conditionNodeId);
+				if (allNodeIds.contains(updateNodeId)) {
+					adjacencyList.get(bodyNodeId).add(updateNodeId);
+					adjacencyList.get(updateNodeId).add(conditionNodeId);
+				}
 			}
 			// 处理普通语句（顺序执行）
 			else {
 				int nextNodeId = nodeId + 1;
 
 				// 如果下一个结点存在且高度相同（同一层级）
-				if (adjacencyList.containsKey(nextNodeId) &&
+				if (allNodeIds.contains(nextNodeId) &&
 						nodeIdToHeight.get(nextNodeId) == height) {
 					adjacencyList.get(nodeId).add(nextNodeId);
 				}
 				// 否则查找同层级的下一个结点
 				else {
-					nextNodeId = findNextNodeAtSameLevel(nodeId, adjacencyList, nodeIdToHeight);
+					nextNodeId = findNextNodeAtSameLevel(nodeId, allNodeIds, nodeIdToHeight);
 					if (nextNodeId != -1) {
 						adjacencyList.get(nodeId).add(nextNodeId);
 					}
@@ -169,15 +177,21 @@ public class MyExtractor extends BaseExtractor{
 	 * 查找同层级的下一个结点
 	 */
 	private int findNextNodeAtSameLevel(int nodeId,
-										Map<Integer, List<Integer>> adjacencyList,
+										Set<Integer> allNodeIds,
 										Map<Integer, Integer> nodeIdToHeight) {
 		int currentHeight = nodeIdToHeight.get(nodeId);
 		int nextNodeId = nodeId + 1;
 
-		while (adjacencyList.containsKey(nextNodeId)) {
+		// 查找下一个同层级的结点
+		while (true) {
+			if (!allNodeIds.contains(nextNodeId)) {
+				break;
+			}
+
 			if (nodeIdToHeight.get(nextNodeId) == currentHeight) {
 				return nextNodeId;
 			}
+
 			nextNodeId++;
 		}
 
