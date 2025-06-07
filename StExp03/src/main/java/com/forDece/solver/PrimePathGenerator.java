@@ -2,19 +2,36 @@ package com.forDece.solver;
 
 import java.util.*;
 
-import java.util.*;
 
 public class PrimePathGenerator {
-    // CFG矩阵表示的边
-    private static int[][] matrixCfg = new int[][] {
-            {0, 3}, {3, 4}, {4, 5}, {5, 4}, {4, 1}, {1, 7}, {7, 8}, {8, 9}, {9, 8}, {8, 2}
-    };
-
     // 存储生成的主路径
     private static List<List<Integer>> primePaths = new ArrayList<>();
 
     // 邻接表表示图
-    private static Map<Integer, List<Integer>> adjacencyList = new HashMap<>();
+    private static final Map<Integer, List<Integer>> adjacencyList = new HashMap<>();
+
+    private static int[][] matrixCfg;
+
+    public static int[][] buildTestRequirements(int [][]cfg){
+        primePaths.clear();
+        adjacencyList.clear();
+        matrixCfg = cfg;
+
+        // 构建邻接表
+        buildAdjacencyList();
+
+        // 寻找所有环作为主路径
+        findAllCycles();
+
+        // 寻找所有可能的路径作为主路径
+        findAllPaths();
+
+        removeSubarrayPaths();
+
+        return primePaths.stream()
+                .map(path -> path.stream().mapToInt(Integer::intValue).toArray())
+                .toArray(int[][]::new);
+    }
 
     // 判断是否为连续子数组
     private static boolean isSubarray(List<Integer> sub, List<Integer> array) {
@@ -56,19 +73,8 @@ public class PrimePathGenerator {
         primePaths = filteredPaths;
     }
     public static void main(String[] args) {
-        // 构建邻接表
-        buildAdjacencyList();
 
-        // 寻找所有环作为主路径
-        findAllCycles();
 
-        // 寻找所有可能的路径作为主路径
-        findAllPaths();
-
-        removeSubarrayPaths();
-
-        // 输出主路径矩阵
-        printPrimePaths();
     }
 
     // 构建邻接表
@@ -168,19 +174,4 @@ public class PrimePathGenerator {
         primePaths.add(path);
     }
 
-    // 输出主路径矩阵
-    private static void printPrimePaths() {
-        System.out.println("private int[][] matrixPrimePath = new int[][] {");
-        for (List<Integer> path : primePaths) {
-            System.out.print("    {");
-            for (int i = 0; i < path.size(); i++) {
-                System.out.print(path.get(i));
-                if (i < path.size() - 1) {
-                    System.out.print(", ");
-                }
-            }
-            System.out.println("},");
-        }
-        System.out.println("};");
-    }
 }

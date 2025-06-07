@@ -10,12 +10,13 @@ import java.util.stream.Collectors;
 public class CFGGenerator {
     private static boolean called = false;
 
+    private static List<Node> cachedNodes;
+
     public static List<Node> getNodes(String pathFile, String methodName) {
         if (called) {
             // ControlFlowNodeParser内的CfgNodeVisitor维护了一个静态计数器
             // 重复调用会导致nodeId一直递增
-            System.out.println("请勿重复调用getNodes方法");
-            System.exit(-1);
+            return cachedNodes;
         }
         called = true;
 
@@ -45,9 +46,10 @@ public class CFGGenerator {
             System.out.println("未成功解析文件，请确认您的工作目录为 StExp03 或 文件相对路径是否设置正确");
             System.exit(-1);
         }
-        return cfgNodes.stream()
+        cachedNodes = cfgNodes.stream()
                 .skip(1)
                 .map(Node::BuildNode).collect(Collectors.toList());
+        return cachedNodes;
     }
 
     public static int[][] buildControlFlowGraph(List<Node> nodes) {
