@@ -12,7 +12,7 @@
 > ![img_6.png](assets/img_6.png)
 ### 刷新 pom 文件、同步 maven 依赖
 > 如果您的 jdk 已就绪，需先到 pom 文件同步依赖，也可模块根路径执行 mvn 的相关命令，但推荐使用 IDEA
-> ![img.png](img.png)
+> ![img.png](assets/img.png)
 - 本次项目除了使用老师提供的两个jar包外（作为本地依赖引入maven），还用了`lombok`
 - `lombok`只用到了构建者模式和`setter`的生成器，仅简化代码编写，并不影响整体实现逻辑
 
