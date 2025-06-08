@@ -72,10 +72,6 @@ public class PrimePathGenerator {
         }
         primePaths = filteredPaths;
     }
-    public static void main(String[] args) {
-
-
-    }
 
     // 构建邻接表
     private static void buildAdjacencyList() {
